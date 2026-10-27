@@ -18,7 +18,7 @@ The promises are precise, and enforced in the database and in code, not in promp
 ## Try it in 3 commands
 
 ```bash
-git clone https://github.com/YOUR-USER/blueprint-governed-text-to-sql.git
+git clone https://github.com/aiuser789/blueprint-governed-text-to-sql.git
 cd blueprint-governed-text-to-sql
 docker compose up --build        # api + PostgreSQL 16; migrations + 230k synthetic rows load on start
 ```
