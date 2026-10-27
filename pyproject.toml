@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trida-blueprint-governed-text-to-sql"
+version = "0.1.0"
+description = "Trida AI Blueprint — Governed Text-to-SQL Agent with row-level security and PII masking (reference prototype)"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10,<3.15"
+# Direct dependencies are pinned exactly. PostgreSQL is not optional for
+# this blueprint: row-level security and masking live in the database,
+# so the agent has nothing to enforce without it.
+dependencies = [
+    "fastapi==0.162.0",
+    "pydantic==2.14.1",
+    "uvicorn==0.54.0",
+    "sqlglot==30.24.0",
+    "psycopg[binary]==3.3.6",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==9.1.1", "httpx==0.28.1"]
+llm = ["anthropic==2.3.0", "openai==3.37.0"]
+
+[project.scripts]
+sql-agent = "sql_agent.cli:main"
+sql-agent-demo = "sql_agent.domains.retail.demo:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+sql_agent = ["data/*.json", "static/*.html", "static/brand/*.png", "static/brand/*.svg", "migrations/*.sql", "domains/*/*.json", "domains/*/*.sql", "domains/*/*.md"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

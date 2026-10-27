@@ -1,0 +1,644 @@
+{
+  "schema": "banking",
+  "_how_to_edit": "Check every 'pii' (remove it from columns that are not personal data, add it where it is missing; kinds: name, first_name, last_name, email, phone, address, city, postal, dob, id_number, account, redact). Improve descriptions \u2014 the model reads them. Set 'rows' per role: 'all', 'none', or a SQL condition on this table's columns using ctx.user_id(), ctx.role(), ctx.region(), ctx.rep_id(). Delete tables the agent should not see. Then: sql-agent dataset apply banking",
+  "notes": "Amounts are USD. A facility is a credit line; facility_products are the products drawn under it; product_outstanding holds the outstanding balance per product per date. loan_collateral links facilities/products to collateral.",
+  "tables": [
+    {
+      "table": "collateral",
+      "view": "banking_collateral",
+      "description": "Rows from banking.collateral (about 170 rows).",
+      "primary_key": "collateral_id",
+      "source_has_rls": false,
+      "columns": {
+        "collateral_id": {
+          "type": "text",
+          "description": ""
+        },
+        "customer_id": {
+          "type": "text",
+          "description": "Joins banking_customers.customer_id."
+        },
+        "collateral_type": {
+          "type": "text",
+          "description": "Values: 'Cash Deposit', 'Commercial Property', 'Inventory', 'Marketable Securities', 'Plant & Machinery', 'Receivables', 'Residential Property', 'Vehicle'."
+        },
+        "description": {
+          "type": "text",
+          "description": ""
+        },
+        "currency": {
+          "type": "text",
+          "description": "Values: 'USD'."
+        },
+        "market_value": {
+          "type": "numeric(18,2)",
+          "description": ""
+        },
+        "valuation_date": {
+          "type": "date",
+          "description": ""
+        },
+        "valuer": {
+          "type": "text",
+          "description": "Values: 'Bank Records', 'CBRE Valuation', 'Cushman & Wakefield', 'In-house Valuation', 'JLL Appraisal', 'Kelley Blue Book', 'Marsh Appraisals'."
+        },
+        "haircut_pct": {
+          "type": "numeric(5,2)",
+          "description": ""
+        },
+        "eligible_value": {
+          "type": "numeric(18,2)",
+          "description": ""
+        },
+        "lien_position": {
+          "type": "text",
+          "description": "Values: 'First', 'Second'."
+        },
+        "insurance_policy_no": {
+          "type": "text",
+          "description": ""
+        },
+        "insurance_expiry": {
+          "type": "date",
+          "description": ""
+        },
+        "next_revaluation_date": {
+          "type": "date",
+          "description": ""
+        },
+        "status": {
+          "type": "text",
+          "description": "Values: 'Active', 'Released'."
+        }
+      },
+      "rows": {
+        "analyst": "all",
+        "supervisor_officer": "all",
+        "privacy_officer": "none",
+        "sales_rep": "none",
+        "contractor": "none"
+      }
+    },
+    {
+      "table": "customer_contacts",
+      "view": "banking_customer_contacts",
+      "description": "Rows from banking.customer_contacts (about 535 rows).",
+      "primary_key": "contact_id",
+      "source_has_rls": false,
+      "columns": {
+        "contact_id": {
+          "type": "text",
+          "description": ""
+        },
+        "customer_id": {
+          "type": "text",
+          "description": "Joins banking_customers.customer_id."
+        },
+        "contact_type": {
+          "type": "text",
+          "description": "Values: 'Alternate', 'Billing', 'Mailing', 'Operations', 'Primary', 'Registered Office', 'Treasury'."
+        },
+        "contact_person": {
+          "type": "text",
+          "description": ""
+        },
+        "email": {
+          "type": "text",
+          "description": "",
+          "pii": "email"
+        },
+        "phone": {
+          "type": "text",
+          "description": "",
+          "pii": "phone"
+        },
+        "phone_type": {
+          "type": "text",
+          "description": ""
+        },
+        "address_line1": {
+          "type": "text",
+          "description": "",
+          "pii": "address"
+        },
+        "address_line2": {
+          "type": "text",
+          "description": "",
+          "pii": "address"
+        },
+        "city": {
+          "type": "text",
+          "description": "",
+          "pii": "city"
+        },
+        "state": {
+          "type": "text",
+          "description": ""
+        },
+        "postal_code": {
+          "type": "text",
+          "description": "",
+          "pii": "postal"
+        },
+        "country": {
+          "type": "text",
+          "description": "Values: 'United States'."
+        },
+        "is_primary": {
+          "type": "boolean",
+          "description": ""
+        },
+        "valid_from": {
+          "type": "date",
+          "description": ""
+        }
+      },
+      "rows": {
+        "analyst": "all",
+        "supervisor_officer": "all",
+        "privacy_officer": "none",
+        "sales_rep": "none",
+        "contractor": "none"
+      }
+    },
+    {
+      "table": "customers",
+      "view": "banking_customers",
+      "description": "Rows from banking.customers (about 300 rows).",
+      "primary_key": "customer_id",
+      "source_has_rls": false,
+      "columns": {
+        "customer_id": {
+          "type": "text",
+          "description": ""
+        },
+        "customer_name": {
+          "type": "text",
+          "description": "",
+          "pii": "name"
+        },
+        "customer_type": {
+          "type": "text",
+          "description": "Values: 'Corporate', 'Individual', 'SME'."
+        },
+        "segment": {
+          "type": "text",
+          "description": "Values: 'Financial Institution', 'Large Corporate', 'Mass Affluent', 'Mid Market', 'Multinational', 'Private Banking', 'Retail', 'Small Business'."
+        },
+        "industry": {
+          "type": "text",
+          "description": ""
+        },
+        "date_of_birth": {
+          "type": "date",
+          "description": "",
+          "pii": "dob"
+        },
+        "tax_id_masked": {
+          "type": "text",
+          "description": "",
+          "pii": "id_number"
+        },
+        "annual_income": {
+          "type": "numeric(14,2)",
+          "description": ""
+        },
+        "annual_revenue": {
+          "type": "numeric(18,2)",
+          "description": ""
+        },
+        "employee_count": {
+          "type": "integer",
+          "description": ""
+        },
+        "risk_rating": {
+          "type": "text",
+          "description": "Values: 'A', 'AA', 'AAA', 'B', 'BB', 'BBB', 'CCC'."
+        },
+        "kyc_status": {
+          "type": "text",
+          "description": "Values: 'Expired', 'Pending Review', 'Verified'."
+        },
+        "relationship_manager": {
+          "type": "text",
+          "description": "Values: 'Abigail Shaffer', 'Allison Hill', 'Angie Henderson', 'Connie Lawrence', 'Cristian Santos', 'Daniel Wagner', 'Gabrielle Davis', 'Gina Moore', 'Jamie Arnold', 'Monica Herrera', 'Noah Rhodes', 'Ryan Munoz'."
+        },
+        "home_branch_code": {
+          "type": "text",
+          "description": "Values: 'BR001', 'BR002', 'BR003', 'BR004', 'BR005', 'BR006', 'BR007', 'BR008'."
+        },
+        "home_branch_name": {
+          "type": "text",
+          "description": "Values: 'Atlanta Midtown', 'Charlotte Uptown', 'Chicago Loop', 'Houston Downtown', 'Los Angeles Wilshire', 'Miami Brickell', 'New York Main', 'Seattle Union'."
+        },
+        "onboarding_date": {
+          "type": "date",
+          "description": ""
+        },
+        "status": {
+          "type": "text",
+          "description": "Values: 'Active', 'Closed', 'Inactive'."
+        }
+      },
+      "rows": {
+        "analyst": "all",
+        "supervisor_officer": "all",
+        "privacy_officer": "none",
+        "sales_rep": "none",
+        "contractor": "none"
+      }
+    },
+    {
+      "table": "deposit_transactions",
+      "view": "banking_deposit_transactions",
+      "description": "Rows from banking.deposit_transactions (about 6,985 rows).",
+      "primary_key": "txn_id",
+      "source_has_rls": false,
+      "columns": {
+        "txn_id": {
+          "type": "text",
+          "description": ""
+        },
+        "txn_ts": {
+          "type": "timestamp with time zone",
+          "description": ""
+        },
+        "value_date": {
+          "type": "date",
+          "description": ""
+        },
+        "facility_id": {
+          "type": "text",
+          "description": "Joins banking_facilities.facility_id."
+        },
+        "customer_id": {
+          "type": "text",
+          "description": "Joins banking_customers.customer_id."
+        },
+        "product_code": {
+          "type": "text",
+          "description": "Joins banking_facility_products.product_code. Values: 'DA-CALL', 'DA-CUR', 'DA-FD', 'DA-MM', 'DA-SAV'."
+        },
+        "currency": {
+          "type": "text",
+          "description": "Values: 'USD'."
+        },
+        "direction": {
+          "type": "text",
+          "description": "Values: 'Credit', 'Debit'."
+        },
+        "txn_type": {
+          "type": "text",
+          "description": "Values: 'ACH In', 'ACH Out', 'ATM Withdrawal', 'Card Purchase', 'Cash Deposit', 'Cash Withdrawal', 'Cheque Deposit', 'Fee', 'Interest Credit', 'Internal Transfer Out', 'Wire In', 'Wire Out'."
+        },
+        "channel": {
+          "type": "text",
+          "description": "Values: 'ACH', 'ATM', 'Branch', 'Card', 'Mobile', 'Online', 'SWIFT', 'System'."
+        },
+        "amount": {
+          "type": "numeric(18,2)",
+          "description": ""
+        },
+        "fx_rate_to_usd": {
+          "type": "numeric(12,6)",
+          "description": ""
+        },
+        "amount_usd": {
+          "type": "numeric(18,2)",
+          "description": ""
+        },
+        "balance_after": {
+          "type": "numeric(18,2)",
+          "description": ""
+        },
+        "counterparty_name": {
+          "type": "text",
+          "description": ""
+        },
+        "counterparty_bank": {
+          "type": "text",
+          "description": "Values: 'Correspondent Bank', 'First Coastal Bank', 'Great Plains Trust', 'Lakeshore National', 'Metro Federal Credit Union', 'Northern Savings Bank', 'Pacific Crest Bank', 'Union Harbor Bank'."
+        },
+        "counterparty_country": {
+          "type": "text",
+          "description": ""
+        },
+        "branch_code": {
+          "type": "text",
+          "description": "Values: 'BR001', 'BR002', 'BR003', 'BR004', 'BR005', 'BR006', 'BR007', 'BR008'."
+        },
+        "description": {
+          "type": "text",
+          "description": ""
+        },
+        "risk_score": {
+          "type": "integer",
+          "description": ""
+        },
+        "alert_flag": {
+          "type": "boolean",
+          "description": ""
+        },
+        "alert_rule": {
+          "type": "text",
+          "description": ""
+        },
+        "alert_status": {
+          "type": "text",
+          "description": "Values: 'Closed - False Positive', 'Escalated', 'Open', 'SAR Filed', 'Under Review'."
+        },
+        "reviewed_by": {
+          "type": "text",
+          "description": "Values: 'David Osei', 'Elena Sokolova', 'Marcus Lee', 'Priya Raman'."
+        },
+        "reviewed_at": {
+          "type": "timestamp with time zone",
+          "description": ""
+        }
+      },
+      "rows": {
+        "analyst": "all",
+        "supervisor_officer": "all",
+        "privacy_officer": "none",
+        "sales_rep": "none",
+        "contractor": "none"
+      }
+    },
+    {
+      "table": "facilities",
+      "view": "banking_facilities",
+      "description": "Rows from banking.facilities (about 961 rows).",
+      "primary_key": "facility_id",
+      "source_has_rls": false,
+      "columns": {
+        "facility_id": {
+          "type": "text",
+          "description": ""
+        },
+        "customer_id": {
+          "type": "text",
+          "description": "Joins banking_customers.customer_id."
+        },
+        "facility_type": {
+          "type": "text",
+          "description": "Values: 'Deposit Account', 'Loan', 'Trade Finance'."
+        },
+        "product_code": {
+          "type": "text",
+          "description": "Joins banking_facility_products.product_code."
+        },
+        "product_name": {
+          "type": "text",
+          "description": ""
+        },
+        "currency": {
+          "type": "text",
+          "description": "Values: 'CNY', 'EUR', 'GBP', 'JPY', 'USD'."
+        },
+        "limit_amount": {
+          "type": "numeric(18,2)",
+          "description": ""
+        },
+        "outstanding_amount": {
+          "type": "numeric(18,2)",
+          "description": ""
+        },
+        "available_amount": {
+          "type": "numeric(18,2)",
+          "description": ""
+        },
+        "deposit_balance": {
+          "type": "numeric(18,2)",
+          "description": ""
+        },
+        "interest_rate_pct": {
+          "type": "numeric(6,3)",
+          "description": ""
+        },
+        "fee_rate_pct": {
+          "type": "numeric(6,3)",
+          "description": ""
+        },
+        "start_date": {
+          "type": "date",
+          "description": ""
+        },
+        "maturity_date": {
+          "type": "date",
+          "description": ""
+        },
+        "tenor_months": {
+          "type": "integer",
+          "description": ""
+        },
+        "status": {
+          "type": "text",
+          "description": ""
+        },
+        "days_past_due": {
+          "type": "integer",
+          "description": ""
+        },
+        "collateral_type": {
+          "type": "text",
+          "description": "Values: 'Cash Margin', 'Corporate Guarantee', 'Fixed Deposit Lien', 'Goods / Title Documents'."
+        },
+        "collateral_value": {
+          "type": "numeric(18,2)",
+          "description": ""
+        },
+        "counterparty_name": {
+          "type": "text",
+          "description": ""
+        },
+        "counterparty_country": {
+          "type": "text",
+          "description": ""
+        },
+        "branch_code": {
+          "type": "text",
+          "description": "Values: 'BR001', 'BR002', 'BR003', 'BR004', 'BR005', 'BR006', 'BR007', 'BR008'."
+        },
+        "relationship_manager": {
+          "type": "text",
+          "description": "Values: 'Abigail Shaffer', 'Allison Hill', 'Angie Henderson', 'Connie Lawrence', 'Cristian Santos', 'Daniel Wagner', 'Gabrielle Davis', 'Gina Moore', 'Jamie Arnold', 'Monica Herrera', 'Noah Rhodes', 'Ryan Munoz'."
+        }
+      },
+      "rows": {
+        "analyst": "all",
+        "supervisor_officer": "all",
+        "privacy_officer": "none",
+        "sales_rep": "none",
+        "contractor": "none"
+      }
+    },
+    {
+      "table": "facility_products",
+      "view": "banking_facility_products",
+      "description": "Rows from banking.facility_products (about 0 rows).",
+      "primary_key": "product_code",
+      "source_has_rls": false,
+      "columns": {
+        "product_code": {
+          "type": "text",
+          "description": ""
+        },
+        "facility_type": {
+          "type": "text",
+          "description": "Values: 'Deposit Account', 'Loan', 'Trade Finance'."
+        },
+        "product_name": {
+          "type": "text",
+          "description": ""
+        },
+        "eligible_customer_types": {
+          "type": "text",
+          "description": "Values: 'Corporate', 'Corporate|Individual', 'Corporate|SME', 'Corporate|SME|Individual', 'Individual', 'Individual|SME'."
+        },
+        "min_rate_pct": {
+          "type": "numeric(6,3)",
+          "description": ""
+        },
+        "max_rate_pct": {
+          "type": "numeric(6,3)",
+          "description": ""
+        },
+        "is_funded": {
+          "type": "boolean",
+          "description": ""
+        }
+      },
+      "rows": {
+        "analyst": "all",
+        "supervisor_officer": "all",
+        "privacy_officer": "none",
+        "sales_rep": "none",
+        "contractor": "none"
+      }
+    },
+    {
+      "table": "loan_collateral",
+      "view": "banking_loan_collateral",
+      "description": "Rows from banking.loan_collateral (about 173 rows).",
+      "primary_key": null,
+      "source_has_rls": false,
+      "columns": {
+        "facility_id": {
+          "type": "text",
+          "description": "Joins banking_facilities.facility_id."
+        },
+        "collateral_id": {
+          "type": "text",
+          "description": "Joins banking_collateral.collateral_id."
+        },
+        "allocated_amount": {
+          "type": "numeric(18,2)",
+          "description": ""
+        },
+        "charge_type": {
+          "type": "text",
+          "description": "Values: 'Hypothecation', 'Lien', 'Mortgage', 'Pledge'."
+        },
+        "linked_date": {
+          "type": "date",
+          "description": ""
+        }
+      },
+      "rows": {
+        "analyst": "all",
+        "supervisor_officer": "all",
+        "privacy_officer": "none",
+        "sales_rep": "none",
+        "contractor": "none"
+      }
+    },
+    {
+      "table": "product_outstanding",
+      "view": "banking_product_outstanding",
+      "description": "Rows from banking.product_outstanding (about 1,326 rows).",
+      "primary_key": "snapshot_id",
+      "source_has_rls": false,
+      "columns": {
+        "snapshot_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "as_of_date": {
+          "type": "date",
+          "description": ""
+        },
+        "facility_id": {
+          "type": "text",
+          "description": "Joins banking_facilities.facility_id."
+        },
+        "customer_id": {
+          "type": "text",
+          "description": "Joins banking_customers.customer_id."
+        },
+        "product_code": {
+          "type": "text",
+          "description": "Joins banking_facility_products.product_code."
+        },
+        "facility_type": {
+          "type": "text",
+          "description": "Values: 'Deposit Account', 'Loan', 'Trade Finance'."
+        },
+        "currency": {
+          "type": "text",
+          "description": "Values: 'CNY', 'EUR', 'GBP', 'JPY', 'USD'."
+        },
+        "limit_amount": {
+          "type": "numeric(18,2)",
+          "description": ""
+        },
+        "outstanding_balance": {
+          "type": "numeric(18,2)",
+          "description": ""
+        },
+        "available_amount": {
+          "type": "numeric(18,2)",
+          "description": ""
+        },
+        "accrued_interest": {
+          "type": "numeric(14,2)",
+          "description": ""
+        },
+        "fx_rate_to_usd": {
+          "type": "numeric(12,6)",
+          "description": ""
+        },
+        "outstanding_balance_usd": {
+          "type": "numeric(18,2)",
+          "description": ""
+        },
+        "days_past_due": {
+          "type": "integer",
+          "description": ""
+        },
+        "status": {
+          "type": "text",
+          "description": "Values: 'Active', 'Dormant', 'Non-Performing', 'Performing', 'Utilised', 'Watchlist'."
+        }
+      },
+      "rows": {
+        "analyst": "all",
+        "supervisor_officer": "all",
+        "privacy_officer": "none",
+        "sales_rep": "none",
+        "contractor": "none"
+      }
+    }
+  ],
+  "examples": [
+    "How many facilities are active?",
+    "What is the total outstanding amount by product?",
+    "Top 10 customers by total outstanding",
+    "What is the total collateral value by collateral type?",
+    "How many deposit transactions per month in 2026?",
+    "How many customers have more than one facility?",
+    [
+      "pii",
+      "List customers with their phone numbers"
+    ]
+  ]
+}

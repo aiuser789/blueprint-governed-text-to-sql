@@ -1,0 +1,17 @@
+{
+  "_note": "Synthetic demo identities. In production these come from your identity provider (SSO / JWT claims), never from the question text.",
+  "users": [
+    {"user_id": "priya", "display_name": "Priya Raman", "role": "supervisor_officer", "region": "West", "pii_tier": "masked",
+     "about": "Supervisor officer, West. Sees West rows only; customer PII masked."},
+    {"user_id": "marco", "display_name": "Marco Silva", "role": "supervisor_officer", "region": "East", "pii_tier": "masked",
+     "about": "Supervisor officer, East. Sees East rows only; customer PII masked."},
+    {"user_id": "dev", "display_name": "Dev Patel", "role": "sales_rep", "region": "East", "rep_id": "R-E-03", "pii_tier": "partial",
+     "about": "Sales rep R-E-03. Sees only the customers assigned to him (and their orders); first name, last initial and city."},
+    {"user_id": "sam", "display_name": "Sam Okafor", "role": "analyst", "pii_tier": "masked", "can_approve": true,
+     "about": "HQ analyst. All regions; customer PII masked. Approves exports and glossary changes."},
+    {"user_id": "lena", "display_name": "Lena Fischer", "role": "privacy_officer", "pii_tier": "full", "can_approve": true,
+     "about": "Privacy officer. All regions, full PII. Reviews the audit log."},
+    {"user_id": "tom", "display_name": "Tom Becker", "role": "contractor", "pii_tier": "masked",
+     "about": "Agency contractor. No row-level customer or order data: monthly aggregates only, minimum group size 10."}
+  ]
+}

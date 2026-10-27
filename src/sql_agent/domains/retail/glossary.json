@@ -1,0 +1,56 @@
+{
+  "_note": "Approved business definitions. The planner must use these when a term matches. Terms marked ambiguous make the agent ask which definition is meant instead of picking one. New terms arrive through the glossary-proposal approval flow.",
+  "terms": {
+    "revenue": {
+      "aliases": ["revenue", "sales", "turnover", "gmv"],
+      "definition": "Sum of orders.total_amount for orders whose status is not 'cancelled', dated by orders.order_date.",
+      "sql_hint": "SUM(o.total_amount) FILTER (WHERE o.status <> 'cancelled')  -- or WHERE o.status <> 'cancelled'; period on o.order_date"
+    },
+    "order count": {
+      "aliases": ["number of orders", "order count", "how many orders"],
+      "definition": "Count of orders whose status is not 'cancelled', dated by order_date. A status breakdown counts every status.",
+      "sql_hint": "COUNT(*) FILTER (WHERE o.status <> 'cancelled')"
+    },
+    "average order value": {
+      "aliases": ["average order value", "aov", "average order"],
+      "definition": "Revenue divided by order count (non-cancelled orders), rounded to cents.",
+      "sql_hint": "ROUND(AVG(o.total_amount), 2) with WHERE o.status <> 'cancelled'"
+    },
+    "units sold": {
+      "aliases": ["units sold", "units", "items sold"],
+      "definition": "Sum of order_items.quantity on non-cancelled orders, dated by orders.order_date.",
+      "sql_hint": "SUM(i.quantity) joining orders o ON o.order_id = i.order_id WHERE o.status <> 'cancelled'"
+    },
+    "new customers": {
+      "aliases": ["new customers", "signups", "customer acquisition"],
+      "definition": "Customers whose customers.created_at falls in the period.",
+      "sql_hint": "COUNT(*) FROM customers WHERE created_at >= :start AND created_at < :end"
+    },
+    "active customer": {
+      "aliases": ["active customer", "active customers", "active accounts"],
+      "ambiguous": true,
+      "candidates": [
+        {"key": "90-day", "label": "Ordered in the last 90 days (sales operations definition)",
+         "sql_hint": "COUNT(DISTINCT o.customer_id) FROM orders o WHERE o.status <> 'cancelled' AND o.order_date > :as_of - 90 AND o.order_date <= :as_of",
+         "markers": ["90 day", "90-day", "90 days", "ninety"]},
+        {"key": "12-month", "label": "Ordered in the last 12 months (finance definition)",
+         "sql_hint": "COUNT(DISTINCT o.customer_id) FROM orders o WHERE o.status <> 'cancelled' AND o.order_date > :as_of - INTERVAL '12 months' AND o.order_date <= :as_of",
+         "markers": ["12 month", "12-month", "twelve month", "12 months", "365"]}
+      ]
+    },
+    "fiscal year": {
+      "aliases": ["fiscal year", "fy"],
+      "definition": "FY2026 runs 1 February 2026 to 31 January 2027 (FISCAL_YEAR_START_MONTH=2). 'This year' and 'last year' are ambiguous between calendar and fiscal, so the agent asks.",
+      "sql_hint": "order_date >= DATE '2026-02-01' AND order_date < DATE '2027-02-01'"
+    }
+  },
+  "unsupported": {
+    "_note": "Concepts the schema cannot answer. The agent declines and says what it does have, instead of inventing a proxy.",
+    "profit": ["profit", "profits", "margin", "margins", "gross margin", "cost of goods", "cogs", "markup"],
+    "returns": ["return rate", "returns", "returned", "refund", "refunds", "refunded"],
+    "inventory": ["inventory", "stock level", "stock levels", "in stock", "out of stock", "warehouse stock"],
+    "payroll": ["salary", "salaries", "payroll", "compensation", "commission"],
+    "marketing": ["marketing spend", "ad spend", "campaign", "cac", "customer acquisition cost"],
+    "web analytics": ["website traffic", "page views", "pageviews", "bounce rate", "conversion rate", "web sessions"]
+  }
+}

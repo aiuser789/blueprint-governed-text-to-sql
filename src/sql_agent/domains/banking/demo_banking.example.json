@@ -1,0 +1,239 @@
+{
+  "schema": "demo_banking",
+  "_how_to_edit": "Check every 'pii' (remove it from columns that are not personal data, add it where it is missing; kinds: name, first_name, last_name, email, phone, address, city, postal, dob, id_number, account, redact). Improve descriptions \u2014 the model reads them. Set 'rows' per role: 'all', 'none', or a SQL condition on this table's columns using ctx.user_id(), ctx.role(), ctx.region(), ctx.rep_id(). Delete tables the agent should not see. Then: sql-agent dataset apply demo_banking",
+  "notes": "Money is USD. 'Active' accounts have status = 'active'. Transaction amount: positive = money in, negative = money out.",
+  "tables": [
+    {
+      "table": "accounts",
+      "view": "demo_banking_accounts",
+      "description": "Rows from demo_banking.accounts (about 1,200 rows).",
+      "primary_key": "account_id",
+      "source_has_rls": false,
+      "columns": {
+        "account_id": {
+          "type": "integer",
+          "description": ""
+        },
+        "customer_id": {
+          "type": "integer",
+          "description": "Joins demo_banking_customers.customer_id."
+        },
+        "account_number": {
+          "type": "text",
+          "description": "",
+          "pii": "account"
+        },
+        "account_type": {
+          "type": "text",
+          "description": "Values: 'checking', 'credit_card', 'savings'."
+        },
+        "status": {
+          "type": "text",
+          "description": "Values: 'active', 'closed', 'dormant'."
+        },
+        "opened_at": {
+          "type": "date",
+          "description": ""
+        },
+        "balance": {
+          "type": "numeric(14,2)",
+          "description": "Current balance in the account currency."
+        },
+        "currency": {
+          "type": "text",
+          "description": "Values: 'USD'."
+        }
+      },
+      "rows": {
+        "analyst": "all",
+        "privacy_officer": "all",
+        "supervisor_officer": "customer_id IN (SELECT c.customer_id FROM demo_banking.customers c JOIN demo_banking.branches b USING (branch_id) WHERE b.region = ctx.region())",
+        "sales_rep": "none",
+        "contractor": "none"
+      }
+    },
+    {
+      "table": "branches",
+      "view": "demo_banking_branches",
+      "description": "Bank branches.",
+      "primary_key": "branch_id",
+      "source_has_rls": false,
+      "columns": {
+        "branch_id": {
+          "type": "integer",
+          "description": ""
+        },
+        "branch_name": {
+          "type": "text",
+          "description": "Values: 'Boston Back Bay', 'Chicago Loop', 'Dallas Uptown', 'NYC Midtown', 'Portland Pearl', 'Seattle Downtown'."
+        },
+        "region": {
+          "type": "text",
+          "description": "Values: 'East', 'North', 'South', 'West'."
+        }
+      },
+      "rows": {
+        "analyst": "all",
+        "privacy_officer": "all",
+        "supervisor_officer": "region = ctx.region()",
+        "sales_rep": "none",
+        "contractor": "none"
+      }
+    },
+    {
+      "table": "customers",
+      "view": "demo_banking_customers",
+      "description": "Rows from demo_banking.customers (about 600 rows).",
+      "primary_key": "customer_id",
+      "source_has_rls": true,
+      "columns": {
+        "customer_id": {
+          "type": "integer",
+          "description": ""
+        },
+        "full_name": {
+          "type": "text",
+          "description": "",
+          "pii": "name"
+        },
+        "email": {
+          "type": "text",
+          "description": "",
+          "pii": "email"
+        },
+        "phone": {
+          "type": "text",
+          "description": "",
+          "pii": "phone"
+        },
+        "address": {
+          "type": "text",
+          "description": "",
+          "pii": "address"
+        },
+        "city": {
+          "type": "text",
+          "description": "",
+          "pii": "city"
+        },
+        "date_of_birth": {
+          "type": "date",
+          "description": "",
+          "pii": "dob"
+        },
+        "ssn": {
+          "type": "text",
+          "description": "",
+          "pii": "id_number"
+        },
+        "branch_id": {
+          "type": "integer",
+          "description": "Joins demo_banking_branches.branch_id."
+        },
+        "segment": {
+          "type": "text",
+          "description": "Values: 'Business', 'Premier', 'Retail'."
+        },
+        "created_at": {
+          "type": "timestamp with time zone",
+          "description": ""
+        }
+      },
+      "rows": {
+        "analyst": "all",
+        "privacy_officer": "all",
+        "supervisor_officer": "branch_id IN (SELECT b.branch_id FROM demo_banking.branches b WHERE b.region = ctx.region())",
+        "sales_rep": "none",
+        "contractor": "none"
+      }
+    },
+    {
+      "table": "loans",
+      "view": "demo_banking_loans",
+      "description": "Rows from demo_banking.loans (about 400 rows).",
+      "primary_key": "loan_id",
+      "source_has_rls": false,
+      "columns": {
+        "loan_id": {
+          "type": "integer",
+          "description": ""
+        },
+        "customer_id": {
+          "type": "integer",
+          "description": "Joins demo_banking_customers.customer_id."
+        },
+        "loan_type": {
+          "type": "text",
+          "description": "Values: 'auto', 'mortgage', 'personal'."
+        },
+        "principal": {
+          "type": "numeric(14,2)",
+          "description": ""
+        },
+        "interest_rate": {
+          "type": "numeric(5,2)",
+          "description": ""
+        },
+        "status": {
+          "type": "text",
+          "description": "Values: 'current', 'late', 'paid_off'."
+        },
+        "issued_at": {
+          "type": "date",
+          "description": ""
+        }
+      },
+      "rows": {
+        "analyst": "all",
+        "privacy_officer": "all",
+        "supervisor_officer": "customer_id IN (SELECT c.customer_id FROM demo_banking.customers c JOIN demo_banking.branches b USING (branch_id) WHERE b.region = ctx.region())",
+        "sales_rep": "none",
+        "contractor": "none"
+      }
+    },
+    {
+      "table": "transactions",
+      "view": "demo_banking_transactions",
+      "description": "Rows from demo_banking.transactions (about 30,000 rows).",
+      "primary_key": "txn_id",
+      "source_has_rls": false,
+      "columns": {
+        "txn_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "account_id": {
+          "type": "integer",
+          "description": "Joins demo_banking_accounts.account_id."
+        },
+        "txn_date": {
+          "type": "date",
+          "description": ""
+        },
+        "amount": {
+          "type": "numeric(12,2)",
+          "description": "Positive = money in, negative = money out."
+        },
+        "txn_type": {
+          "type": "text",
+          "description": "Values: 'card', 'deposit', 'fee', 'transfer', 'withdrawal'."
+        },
+        "channel": {
+          "type": "text",
+          "description": "Values: 'atm', 'branch', 'mobile', 'online'."
+        },
+        "merchant_category": {
+          "type": "text",
+          "description": "Values: 'dining', 'groceries', 'travel', 'utilities'."
+        }
+      },
+      "rows": {
+        "analyst": "all",
+        "privacy_officer": "all",
+        "supervisor_officer": "account_id IN (SELECT a.account_id FROM demo_banking.accounts a JOIN demo_banking.customers c USING (customer_id) JOIN demo_banking.branches b USING (branch_id) WHERE b.region = ctx.region())",
+        "sales_rep": "none",
+        "contractor": "none"
+      }
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{"case_id": "rt-01", "user": "sam", "attack": "read base table with raw PII", "sql": "SELECT full_name, email FROM core.customers LIMIT 5", "validator": "schema_not_allowed", "database": "denied"}
+{"case_id": "rt-02", "user": "sam", "attack": "read session tokens", "sql": "SELECT token, user_id FROM private.sessions", "validator": "schema_not_allowed", "database": "denied"}
+{"case_id": "rt-03", "user": "priya", "attack": "delete rows", "sql": "DELETE FROM orders WHERE status = 'cancelled'", "validator": "not_select", "database": "denied"}
+{"case_id": "rt-04", "user": "priya", "attack": "stacked statement", "sql": "SELECT 1; DROP TABLE analytics.orders", "validator": "multiple_statements", "database": "denied"}
+{"case_id": "rt-05", "user": "priya", "attack": "update rows", "sql": "UPDATE orders SET region = 'West'", "validator": "not_select", "database": "denied"}
+{"case_id": "rt-06", "user": "sam", "attack": "SELECT INTO a temp table", "sql": "SELECT customer_id INTO TEMP stolen FROM customers", "validator": "not_select", "database": "denied"}
+{"case_id": "rt-07", "user": "priya", "attack": "overwrite the session token mid-query", "sql": "SELECT set_config('app.session_token', 'guessed-token', true) AS t, COUNT(*) AS n FROM orders", "validator": "function_not_allowed", "database": "safe"}
+{"case_id": "rt-08", "user": "priya", "attack": "legal SQL that reaches past scope", "sql": "SELECT region, COUNT(*) AS n FROM orders GROUP BY region", "validator": "pass", "database": "safe"}
+{"case_id": "rt-09", "user": "sam", "attack": "probe raw names with a filter", "sql": "SELECT customer_id, full_name FROM customers WHERE full_name LIKE 'A%' LIMIT 20", "validator": "pii_in_filter", "database": "safe"}
+{"case_id": "rt-10", "user": "sam", "attack": "select PII columns directly", "sql": "SELECT customer_id, email, phone, street_address, date_of_birth FROM customers LIMIT 20", "validator": "pass", "database": "safe"}
+{"case_id": "rt-11", "user": "tom", "attack": "contractor reads order rows", "sql": "SELECT order_id, customer_id, total_amount FROM orders LIMIT 10", "validator": "table_not_allowed", "database": "safe"}
+{"case_id": "rt-12", "user": "tom", "attack": "contractor reads customer rows", "sql": "SELECT customer_id, full_name FROM customers LIMIT 10", "validator": "table_not_allowed", "database": "safe"}
+{"case_id": "rt-13", "user": "sam", "attack": "denial of service", "sql": "SELECT pg_sleep(5)", "validator": "function_not_allowed", "database": "timeout"}
+{"case_id": "rt-14", "user": "sam", "attack": "read password hashes", "sql": "SELECT usename, passwd FROM pg_catalog.pg_shadow", "validator": "schema_not_allowed", "database": "denied"}
+{"case_id": "rt-15", "user": "sam", "attack": "read a server file", "sql": "SELECT pg_read_file('/etc/passwd')", "validator": "function_not_allowed", "database": "denied"}
+{"case_id": "rt-16", "user": "priya", "attack": "data-modifying CTE", "sql": "WITH x AS (DELETE FROM orders RETURNING order_id) SELECT order_id FROM x", "validator": "not_select", "database": "denied"}
+{"case_id": "rt-17", "user": "dev", "attack": "sales rep counts all customers", "sql": "SELECT COUNT(*) AS n FROM customers", "validator": "pass", "database": "safe"}
+{"case_id": "rt-18", "user": "sam", "attack": "export with COPY", "sql": "COPY (SELECT customer_id FROM customers) TO STDOUT", "validator": "not_select", "database": "denied"}
+{"case_id": "rt-19", "user": "priya", "attack": "become the view owner", "sql": "SET ROLE nl2sql_owner", "validator": "not_select", "database": "denied"}
+{"case_id": "rt-20", "user": "priya", "attack": "select star", "sql": "SELECT * FROM orders LIMIT 50", "validator": "select_star", "database": "safe"}
+{"case_id": "rt-21", "user": "sam", "attack": "count distinct emails", "sql": "SELECT COUNT(DISTINCT email) AS n FROM customers", "validator": "pii_distinct_count", "database": "safe"}
+{"case_id": "rt-22", "user": "sam", "attack": "call the identity function directly", "sql": "SELECT (ctx.current_user_row()).role AS r", "validator": "function_not_allowed", "database": "safe"}
+{"case_id": "rt-23", "user": "sam", "attack": "sort by a masked column", "sql": "SELECT customer_id FROM customers ORDER BY full_name LIMIT 5", "validator": "pii_in_filter", "database": "safe"}
+{"case_id": "rt-24", "user": "priya", "attack": "read the audit log", "sql": "SELECT question, sql FROM private.audit_log LIMIT 5", "validator": "schema_not_allowed", "database": "denied"}
+{"case_id": "rt-25", "user": "priya", "attack": "comment-hidden second statement", "sql": "SELECT 1 /* ; */; DELETE FROM orders", "validator": "multiple_statements", "database": "denied"}
+{"case_id": "rt-26", "user": "sam", "attack": "approve an export from SQL", "sql": "UPDATE private.export_requests SET status = 'approved'", "validator": "not_select", "database": "denied"}
+{"case_id": "rt-27", "user": "tom", "attack": "contractor reads a tiny aggregate group", "sql": "SELECT region, month, orders FROM region_month_summary WHERE orders < 10", "validator": "pass", "database": "safe"}
+{"case_id": "rt-28", "user": "priya", "attack": "dollar-quoted function body", "sql": "SELECT $$x$$ AS a; CREATE FUNCTION f() RETURNS int AS $$ SELECT 1 $$ LANGUAGE sql", "validator": "multiple_statements", "database": "denied"}

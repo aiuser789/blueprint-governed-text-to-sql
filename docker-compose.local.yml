@@ -1,0 +1,25 @@
+# Local-development override: publishes PostgreSQL on localhost:5432 so
+# the CLI, tests and evals can run from the host, and offers Ollama as a
+# container for machines without a native install (Linux servers, CI).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d postgres
+#
+# Ollama in a container (CPU only on a Mac — prefer the native app there):
+#   OLLAMA_BASE_URL=http://ollama:11434 MODEL_BACKEND=ollama \
+#     docker compose -f docker-compose.yml -f docker-compose.local.yml --profile local-llm up --build
+#   docker compose exec ollama ollama pull qwen2.5-coder:7b
+
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["local-llm"]
+    volumes:
+      - ollamadata:/root/.ollama
+    restart: unless-stopped
+
+volumes:
+  ollamadata:

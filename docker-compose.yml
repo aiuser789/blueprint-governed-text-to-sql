@@ -1,0 +1,63 @@
+# Production-shaped stack for the Governed Text-to-SQL Agent.
+#
+#   docker compose up --build
+#
+# brings up:
+#   api       the agent service (stateless; scales horizontally). Runs
+#             migrations + loads the synthetic retail data on start.
+#   postgres  PostgreSQL 16: the warehouse, the RLS policies, the masked
+#             views, session tokens and the audit log.
+#
+# The api holds TWO connection strings on purpose (see .env.example):
+# the service role mints identity and writes audit; the agent role runs
+# model-written SQL and can read nothing but the masked analytics views.
+#
+# Model backend: set MODEL_BACKEND=ollama in .env to use Ollama running
+# on the host (recommended on a Mac: native Ollama uses the GPU, Ollama in
+# Docker on a Mac does not). Unset, the stack boots on the offline planner.
+#
+# NOTE: not yet build-verified in the blueprint's dev sandbox (no Docker
+# daemon there) — the first `docker compose up --build` is the
+# verification run (see the README QA checklist).
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://nl2sql:nl2sql@postgres:5432/nl2sql
+      AGENT_DB_PASSWORD: ${AGENT_DB_PASSWORD:-agent-local-only}
+      MODEL_BACKEND: ${MODEL_BACKEND:-mock}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:7b}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+      API_KEY: ${API_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # reach Ollama running on the host (Linux; built in on Mac/Windows)
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: nl2sql
+      POSTGRES_PASSWORD: nl2sql
+      POSTGRES_DB: nl2sql
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nl2sql -d nl2sql"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  pgdata:

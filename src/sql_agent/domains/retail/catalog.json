@@ -1,0 +1,98 @@
+{
+  "_note": "What the model is told about the data. Only the analytics views exist for it; base tables, users, sessions and the audit log are never described. Visibility per role trims this further before a prompt is built.",
+  "views": {
+    "customers": {
+      "description": "One row per customer. Row-filtered by the asker's scope; PII columns are masked by the database according to the asker's tier.",
+      "roles": ["supervisor_officer", "sales_rep", "analyst", "privacy_officer"],
+      "columns": {
+        "customer_id": {"type": "integer", "description": "Primary key."},
+        "region": {"type": "text", "description": "The customer's CURRENT region (North, South, East, West). For revenue by region use orders.region, which is the region at the time of the order."},
+        "segment": {"type": "text", "description": "Consumer, Small Business or Enterprise."},
+        "assigned_rep_id": {"type": "text", "description": "The sales rep who owns the account (joins sales_reps.rep_id)."},
+        "created_at": {"type": "timestamptz", "description": "When the customer signed up. Use for 'new customers'."},
+        "age_band": {"type": "text", "description": "under 30, 30-44, 45-59, 60+ (derived, not PII)."},
+        "full_name": {"type": "text", "pii": true, "description": "Masked unless the asker's tier allows it."},
+        "email": {"type": "text", "pii": true, "description": "Masked unless the asker's tier allows it."},
+        "phone": {"type": "text", "pii": true, "description": "Masked unless the asker's tier allows it."},
+        "street_address": {"type": "text", "pii": true, "description": "Masked unless the asker's tier allows it."},
+        "city": {"type": "text", "pii": true, "description": "Quasi-identifier. Masked for the masked tier."},
+        "postal_code": {"type": "text", "pii": true, "description": "Quasi-identifier. Masked unless the asker's tier allows it."},
+        "date_of_birth": {"type": "text", "pii": true, "description": "Masked unless the asker's tier allows it. Use age_band for age analysis."}
+      }
+    },
+    "orders": {
+      "description": "One row per order. Row-filtered by the asker's scope.",
+      "roles": ["supervisor_officer", "sales_rep", "analyst", "privacy_officer"],
+      "columns": {
+        "order_id": {"type": "integer", "description": "Primary key."},
+        "customer_id": {"type": "integer", "description": "Joins customers.customer_id."},
+        "region": {"type": "text", "description": "Region at the time of the order. Use this for revenue by region."},
+        "order_date": {"type": "date", "description": "The business date. Use this for every period filter and revenue."},
+        "created_at": {"type": "timestamptz", "description": "When the record was keyed (0-4 days after order_date). NOT the business date; do not use for periods."},
+        "status": {"type": "text", "description": "completed, shipped, processing or cancelled. Revenue excludes cancelled."},
+        "total_amount": {"type": "numeric", "description": "Order total in USD (sum of its lines)."}
+      }
+    },
+    "order_items": {
+      "description": "One row per order line. Visible exactly when its order is.",
+      "roles": ["supervisor_officer", "sales_rep", "analyst", "privacy_officer"],
+      "columns": {
+        "order_item_id": {"type": "bigint", "description": "Primary key."},
+        "order_id": {"type": "integer", "description": "Joins orders.order_id."},
+        "product_id": {"type": "integer", "description": "Joins products.product_id."},
+        "quantity": {"type": "integer", "description": "Units on the line."},
+        "unit_price": {"type": "numeric", "description": "Price charged per unit. Line revenue = quantity * unit_price."}
+      }
+    },
+    "products": {
+      "description": "Product catalog. Product names are NOT unique across categories: group by product_id (and show name + category).",
+      "roles": ["supervisor_officer", "sales_rep", "analyst", "privacy_officer", "contractor"],
+      "columns": {
+        "product_id": {"type": "integer", "description": "Primary key."},
+        "name": {"type": "text", "description": "Display name; repeats across categories (e.g. 'Classic Tee')."},
+        "category": {"type": "text", "description": "Apparel, Footwear, Home, Kitchen, Electronics, Outdoor, Beauty, Kids."},
+        "list_price": {"type": "numeric", "description": "Current list price in USD."}
+      }
+    },
+    "sales_reps": {
+      "description": "Sales reps. Rep names and emails are employee PII and are masked by tier.",
+      "roles": ["supervisor_officer", "sales_rep", "analyst", "privacy_officer"],
+      "columns": {
+        "rep_id": {"type": "text", "description": "Primary key, e.g. R-W-01."},
+        "region": {"type": "text", "description": "The rep's region."},
+        "rep_name": {"type": "text", "pii": true, "description": "Masked unless the asker's tier allows it."},
+        "rep_email": {"type": "text", "pii": true, "description": "Masked unless the asker's tier allows it."}
+      }
+    },
+    "region_month_summary": {
+      "description": "Monthly aggregates per region, non-cancelled orders only. Groups with fewer than 10 orders or customers are suppressed. The only order-level source for the contractor role.",
+      "roles": ["supervisor_officer", "analyst", "privacy_officer", "contractor"],
+      "columns": {
+        "region": {"type": "text", "description": "Order region."},
+        "month": {"type": "date", "description": "First day of the month."},
+        "orders": {"type": "integer", "description": "Non-cancelled orders."},
+        "customers": {"type": "integer", "description": "Distinct customers who ordered."},
+        "revenue": {"type": "numeric", "description": "Revenue (non-cancelled), USD."},
+        "avg_order_value": {"type": "numeric", "description": "Average order value, USD."}
+      }
+    },
+    "category_month_summary": {
+      "description": "Monthly aggregates per region and product category, non-cancelled orders only. Groups with fewer than 10 order lines are suppressed.",
+      "roles": ["supervisor_officer", "analyst", "privacy_officer", "contractor"],
+      "columns": {
+        "region": {"type": "text", "description": "Order region."},
+        "month": {"type": "date", "description": "First day of the month."},
+        "category": {"type": "text", "description": "Product category."},
+        "units": {"type": "integer", "description": "Units sold."},
+        "revenue": {"type": "numeric", "description": "Line revenue, USD."},
+        "order_lines": {"type": "integer", "description": "Order lines in the group."}
+      }
+    }
+  },
+  "pii_visibility": {
+    "_note": "What each tier can actually see in each PII column (the database enforces this; the agent uses it to decline requests a tier would only get redactions for).",
+    "full": {"full_name": "full", "email": "full", "phone": "full", "street_address": "full", "city": "full", "postal_code": "full", "date_of_birth": "full", "rep_name": "full", "rep_email": "full"},
+    "partial": {"full_name": "partial", "email": "partial", "phone": "partial", "street_address": "redacted", "city": "full", "postal_code": "partial", "date_of_birth": "partial", "rep_name": "partial", "rep_email": "redacted"},
+    "masked": {"full_name": "pseudonym", "email": "redacted", "phone": "redacted", "street_address": "redacted", "city": "redacted", "postal_code": "redacted", "date_of_birth": "redacted", "rep_name": "pseudonym", "rep_email": "redacted"}
+  }
+}

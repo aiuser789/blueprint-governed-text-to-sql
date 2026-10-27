@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trida AI Blueprint — Governed Text-to-SQL</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+  :root { --ink:#0A0A0A; --muted:#5b6472; --line:#e3e6ec; --accent:#4F46E5; --accent-soft:#eef2ff; --ok:#15803d; --ok-soft:#ecfdf3; --warn:#b45309; --warn-soft:#fff7ed; --bad:#b91c1c; --bad-soft:#fef2f2; --bg:#ffffff; --panel:#f8fafc; --code:#0f172a; --code-ink:#e2e8f0; }
+  @media (prefers-color-scheme: dark) {
+    :root { --ink:#e8eaf0; --muted:#9aa3b2; --line:#2a2f3a; --accent:#8b85ff; --accent-soft:#1f1d3d; --ok:#4ade80; --ok-soft:#0f2a1a; --warn:#fbbf24; --warn-soft:#2b2110; --bad:#f87171; --bad-soft:#2d1414; --bg:#0d0f14; --panel:#141821; --code:#0a0c10; --code-ink:#d6dbe6; }
+    header img.logo { filter: invert(1) hue-rotate(180deg); }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); background:var(--bg); }
+  header { border-bottom:1px solid var(--line); padding:18px 28px; }
+  .header-inner { max-width:1440px; margin:0 auto; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  header img.logo { height:38px; }
+  header h1 { font-size:19px; margin:0; font-weight:700; }
+  header h1 .slash { color:var(--muted); font-weight:400; margin:0 2px; }
+  header h1 .accent { color:var(--accent); }
+  header p { margin:2px 0 0; color:var(--muted); font-size:12.5px; }
+  .info-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .info-chip { display:inline-block; padding:3px 10px; border:1px solid var(--line); border-radius:999px; font-size:11.5px; color:var(--muted); line-height:1.4; }
+  .gh-link { margin-left:auto; display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--ink); text-decoration:none; padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:var(--panel); }
+  .gh-link span { font-size:11px; font-weight:600; color:var(--muted); }
+  .gh-link:hover { border-color:var(--accent); }
+  main { max-width:1440px; margin:0 auto; padding:20px 28px 60px; display:grid; grid-template-columns:minmax(0, 1fr) 360px; gap:18px; }
+  @media (max-width: 1080px) { main { grid-template-columns:1fr; } }
+  @media (max-width: 640px) { main, header { padding-left:16px; padding-right:16px; } }
+  footer { max-width:1440px; margin:0 auto; padding:20px 28px 30px; border-top:1px solid var(--line); color:var(--muted); font-size:12.5px; }
+  footer a { color:var(--accent); text-decoration:none; font-weight:600; }
+  section { border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:14px; background:var(--bg); }
+  section h2 { font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 10px; font-weight:600; }
+  .who { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  select, input[type=text], textarea { font:inherit; font-size:14px; padding:9px 11px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); }
+  .ask-row { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .ask-row input { flex:1 1 360px; min-width:0; }
+  button { font:inherit; font-size:13.5px; padding:9px 16px; border-radius:8px; border:1px solid var(--accent); background:var(--accent); color:#fff; cursor:pointer; }
+  button.secondary { background:transparent; color:var(--accent); }
+  button.small { padding:4px 10px; font-size:12px; }
+  button:disabled { opacity:.5; cursor:default; }
+  .pill { display:inline-block; padding:2px 9px; border-radius:999px; font-size:11.5px; font-weight:600; border:1px solid var(--line); color:var(--muted); background:var(--panel); }
+  .pill.answer { color:var(--ok); background:var(--ok-soft); border-color:transparent; }
+  .pill.clarify { color:var(--warn); background:var(--warn-soft); border-color:transparent; }
+  .pill.decline, .pill.error { color:var(--bad); background:var(--bad-soft); border-color:transparent; }
+  .examples { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .examples button { background:var(--panel); color:var(--ink); border:1px solid var(--line); font-size:12.5px; padding:5px 10px; }
+  .examples button:hover { border-color:var(--accent); color:var(--accent); }
+  .examples .tag { font-size:10.5px; color:var(--muted); margin-right:4px; text-transform:uppercase; letter-spacing:.04em; }
+  .message { font-size:16px; line-height:1.5; margin:10px 0 6px; }
+  .scope { font-size:12.5px; color:var(--muted); display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .note { margin-top:8px; padding:8px 12px; border-left:3px solid var(--warn); background:var(--warn-soft); font-size:13px; border-radius:4px; }
+  .options { display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+  .options button { text-align:left; background:var(--panel); color:var(--ink); border:1px solid var(--line); }
+  .options button:hover { border-color:var(--accent); }
+  pre.sql { background:var(--code); color:var(--code-ink); padding:12px 14px; border-radius:8px; font-size:12.5px; overflow:auto; margin:10px 0 0; white-space:pre; }
+  .table-wrap { overflow:auto; max-height:420px; margin-top:10px; border:1px solid var(--line); border-radius:8px; }
+  table { border-collapse:collapse; width:100%; font-size:12.5px; }
+  th, td { padding:6px 10px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+  th { position:sticky; top:0; background:var(--panel); font-weight:600; }
+  td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  td.masked { color:var(--muted); font-style:italic; }
+  .stages { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+  .stage { font-size:11.5px; padding:4px 8px; border-radius:6px; border:1px solid var(--line); background:var(--panel); cursor:default; }
+  .stage.ok b { color:var(--ok); } .stage.fail b { color:var(--bad); } .stage.warn b { color:var(--warn); } .stage.skip b { color:var(--muted); }
+  .meta { font-size:12px; color:var(--muted); margin-top:10px; display:flex; flex-wrap:wrap; gap:14px; }
+  .rules { margin:10px 0 0; padding-left:18px; font-size:12.5px; color:var(--bad); }
+  .tabs { display:flex; gap:4px; margin-bottom:10px; flex-wrap:wrap; }
+  .tabs button { background:transparent; color:var(--muted); border:1px solid var(--line); padding:5px 10px; font-size:12.5px; }
+  .tabs button.on { color:var(--accent); border-color:var(--accent); background:var(--accent-soft); }
+  .side-item { border-bottom:1px solid var(--line); padding:9px 0; font-size:12.5px; }
+  .side-item:last-child { border-bottom:none; }
+  .side-item .q { font-weight:600; margin-bottom:2px; }
+  .side-item .sub { color:var(--muted); }
+  .side-item .acts { display:flex; gap:6px; margin-top:6px; }
+  .compare-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px; }
+  .card { border:1px solid var(--line); border-radius:10px; padding:12px; background:var(--panel); font-size:13px; }
+  .card h3 { font-size:13.5px; margin:0 0 4px; }
+  .card .who-line { font-size:11.5px; color:var(--muted); margin-bottom:8px; }
+  .card table { font-size:11.5px; background:var(--bg); }
+  .empty { color:var(--muted); font-size:13px; }
+  .view-name { font-weight:600; margin-top:8px; }
+  .col { font-size:12px; color:var(--muted); padding-left:10px; }
+  .col .pii { color:var(--warn); font-weight:600; }
+  .hidden { display:none; }
+  .err { color:var(--bad); font-size:13px; }
+.hint { color: var(--muted, #888); font-size: 13px; margin: 4px 0; }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <img class="logo" src="/brand/tridaai-logo.png" alt="Trida AI">
+    <div>
+      <h1>Trida AI Blueprint <span class="slash">/</span> <span class="accent">Governed Text-to-SQL</span></h1>
+      <p>Ask in plain English. Rows are filtered and PII is masked by PostgreSQL for whoever is asking — not by the prompt.</p>
+      <div class="info-chips">
+        <span class="info-chip">Row-level security in the database</span>
+        <span class="info-chip">PII masked before the model sees it</span>
+        <span class="info-chip">Read-only, validated SQL</span>
+        <span class="info-chip">Every question audited</span>
+        <span class="info-chip" id="backend-chip">backend: …</span>
+      </div>
+    </div>
+    <a class="gh-link" href="https://github.com/YOUR-USER/blueprint-governed-text-to-sql" target="_blank" rel="noopener">
+      <svg width="22" height="22" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      <span>GitHub</span>
+    </a>
+  </div>
+</header>
+
+<main>
+  <div>
+    <section>
+      <h2>Ask</h2>
+      <div class="who">
+        <label for="user" class="scope">Signed in as</label>
+        <select id="user"></select>
+        <label for="data" class="scope">Data</label>
+        <select id="data" title="Which data questions are about. Also settable in the URL: ?data=banking"></select>
+        <span class="err" id="data-err" role="alert"></span>
+        <span class="pill" id="role-pill"></span>
+        <span class="pill" id="tier-pill"></span>
+        <span class="scope" id="scope-line"></span>
+      </div>
+      <div class="ask-row">
+        <input id="q" type="text" placeholder="e.g. Top 5 customers by revenue last quarter" autocomplete="off">
+        <button id="ask-btn">Ask</button>
+        <button id="compare-btn" class="secondary" title="Ask the same question as every demo user">Compare across users</button>
+      </div>
+      <div class="examples" id="examples"></div>
+    </section>
+
+    <section id="result-section" class="hidden">
+      <h2>Answer</h2>
+      <div id="result"></div>
+    </section>
+
+    <section id="compare-section" class="hidden">
+      <h2>Same question, every user</h2>
+      <p class="empty" style="margin-top:0">Identical SQL, different people: the database returns a different scope and a different masking tier to each.</p>
+      <div class="compare-grid" id="compare"></div>
+    </section>
+  </div>
+
+  <aside>
+    <section>
+      <div class="tabs">
+        <button data-tab="approvals" class="on">Approvals</button>
+        <button data-tab="audit">Audit log</button>
+        <button data-tab="catalog">What I can see</button>
+      </div>
+      <div id="tab-approvals"></div>
+      <div id="tab-audit" class="hidden"></div>
+      <div id="tab-catalog" class="hidden"></div>
+    </section>
+  </aside>
+</main>
+
+<footer>
+  Synthetic data only. A reference prototype from <a href="https://trida.ai" target="_blank" rel="noopener">Trida AI</a> — the demo user switch stands in for SSO; nothing in a question can change who is asking.
+</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let users = [], me = null, lastResult = null;
+
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+const params = new URLSearchParams(location.search);
+let dataSel = (params.get("data") || "").toLowerCase();  // empty = the server's default (first dataset, else Retail)
+function headers() { const h = {"Content-Type": "application/json", "X-Demo-User": $("user").value}; if (dataSel) h["X-Data"] = dataSel; return h; }
+function syncUrl() {
+  const p = new URLSearchParams(location.search);
+  p.set("user", $("user").value);
+  p.set("data", dataSel);
+  history.replaceState(null, "", location.pathname + "?" + p.toString());
+}
+async function api(path, opts = {}) {
+  const res = await fetch(path, {...opts, headers: {...headers(), ...(opts.headers || {})}});
+  const ct = res.headers.get("content-type") || "";
+  const body = ct.includes("json") ? await res.json() : await res.text();
+  if (!res.ok) throw new Error(body && body.detail ? body.detail : (typeof body === "string" ? body : res.statusText));
+  return body;
+}
+function cell(v, col) {
+  if (v === null || v === undefined) return '<td class="masked">null</td>';
+  const s = String(v);
+  if (/^\[(REDACTED|WITHHELD)\]$/.test(s) || /^(Customer #|Rep R-)/.test(s) || /\*\*\*/.test(s)) return `<td class="masked">${esc(s)}</td>`;
+  if (typeof v === "number" && /(^|_)id$/.test(col)) return `<td class="num">${v}</td>`;
+  if (typeof v === "number") {
+    const money = /revenue|amount|value|price/.test(col);
+    return `<td class="num">${money ? "$" + v.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : v.toLocaleString()}</td>`;
+  }
+  return `<td>${esc(s)}</td>`;
+}
+function table(cols, rows, limit = 200) {
+  if (!cols.length) return "";
+  const head = cols.map(c => `<th>${esc(c)}</th>`).join("");
+  const body = rows.slice(0, limit).map(r => "<tr>" + r.map((v, i) => cell(v, cols[i])).join("") + "</tr>").join("");
+  return `<div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
+async function loadUsers() {
+  users = await api("/api/users");
+  $("user").innerHTML = users.map(u => `<option value="${esc(u.user_id)}">${esc(u.display_name)} — ${esc(u.role.replace("_", " "))}${u.region ? " · " + esc(u.region) : ""}</option>`).join("");
+  const wanted = params.get("user");
+  $("user").value = users.some(u => u.user_id === wanted) ? wanted : "priya";
+  await onUser();
+}
+let meSeq = 0, shownData = "";
+async function onUser(fromMenu = false) {
+  const seq = ++meSeq;  // a slower, older response must never overwrite a newer choice
+  $("data-err").textContent = "";
+  let info;
+  try { info = await api("/api/me"); }
+  catch (e) {
+    if (fromMenu) {  // the user picked this: say why it failed instead of silently switching back
+      if (seq !== meSeq) return;
+      const picked = $("data").selectedOptions[0] ? $("data").selectedOptions[0].textContent : dataSel;
+      dataSel = shownData; $("data").value = shownData;
+      $("data-err").textContent = `Couldn't switch to ${picked}: ${e.message}`;
+      return;
+    }
+    if (!dataSel) throw e;
+    dataSel = ""; info = await api("/api/me");  // unknown ?data= in the URL → the default
+  }
+  if (!info.data_options.some(o => o.key === dataSel)) { dataSel = info.data_default; info = await api("/api/me"); }
+  if (seq !== meSeq) return;
+  shownData = info.data;
+  $("data").innerHTML = info.data_options.map(o => `<option value="${esc(o.key)}">${esc(o.label)}</option>`).join("");
+  $("data").value = info.data;
+  syncUrl();
+  me = info.user;
+  $("role-pill").textContent = me.role.replace("_", " ") + (me.region ? " · " + me.region : "");
+  $("tier-pill").textContent = "PII " + me.pii_tier;
+  $("scope-line").textContent = info.scope;
+  $("backend-chip").textContent = "backend: " + info.backend + " · as of " + info.as_of;
+  $("q").placeholder = info.data === "all" || info.data === "retail"
+    ? "e.g. Top 5 customers by revenue last quarter"
+    : `Ask about ${(info.data_options.find(o => o.key === info.data) || {}).label || info.data}, e.g. how many … by …`;
+  if (info.examples && info.examples.length) renderExamples(info.examples);
+  else {
+    const label = (info.data_options.find(o => o.key === info.data) || {}).label || info.data;
+    const why = info.data === "all" ? "The retail data is off (RETAIL_DATA=off), so there are no example questions." : `Asking about ${esc(label)} only.`;
+    $("examples").innerHTML = `<p class="hint">${why} ` +
+      (info.views ? `${info.views} view${info.views === 1 ? "" : "s"} visible to this role — see “What I can see”.` : `This role has no access to any views here.`) + `</p>`;
+  }
+  refreshSide();
+}
+function renderExamples(list) {
+  $("examples").innerHTML = list.map(([tag, q]) => `<button data-q="${esc(q)}"><span class="tag">${tag}</span>${esc(q)}</button>`).join("");
+  $("examples").querySelectorAll("button").forEach(b => b.onclick = () => { $("q").value = b.dataset.q; ask(); });
+}
+
+function renderResult(r) {
+  lastResult = r;
+  const opts = r.options.length ? `<div class="options">${r.options.map(o =>
+      `<button data-rw="${esc(o.rewrite || o.label)}">${esc(o.label)}${o.rewrite ? ` <span class="scope">→ “${esc(o.rewrite)}”</span>` : ""}</button>`).join("")}</div>` : "";
+  const rules = r.rules_fired.length ? `<ul class="rules">${r.rules_fired.map(h => `<li><b>${esc(h.rule)}</b> (attempt ${h.attempt}): ${esc(h.message)}</li>`).join("")}</ul>` : "";
+  const exportBtn = r.export_available ? `<div style="margin-top:10px"><button class="secondary small" id="export-btn">Request full export (needs approval)</button></div>` : "";
+  $("result").innerHTML = `
+    <div class="scope"><span class="pill ${r.kind}">${r.kind}${r.reason_code ? " · " + esc(r.reason_code) : ""}</span>
+      <span>${esc(r.scope)}</span>${r.period ? `<span>· period: ${esc(r.period)}</span>` : ""}
+      ${r.definitions_used.length ? `<span>· definitions: ${r.definitions_used.map(esc).join(", ")}</span>` : ""}</div>
+    <div class="message">${esc(r.message)}</div>
+    ${r.scope_note ? `<div class="note">${esc(r.scope_note)}</div>` : ""}
+    ${opts}
+    ${r.sql ? `<pre class="sql">${esc(r.sql)}</pre>` : ""}
+    ${r.rows.length ? table(r.columns, r.rows) : ""}
+    ${r.truncated ? `<div class="scope" style="margin-top:6px">Showing the first ${r.row_count.toLocaleString()} rows.</div>` : ""}
+    ${exportBtn}
+    ${rules}
+    <div class="stages">${r.stages.map(s => `<span class="stage ${s.status}" title="${esc(s.detail)}"><b>●</b> ${esc(s.name)} · ${s.ms} ms</span>`).join("")}</div>
+    <div class="meta"><span>backend: ${esc(r.backend)}</span><span>output scan: ${esc(r.output_scan)}</span>
+      <span>attempts: ${r.attempts}</span><span>audit #${r.audit_id ?? "—"}</span><span>${r.duration_ms} ms</span></div>`;
+  $("result").querySelectorAll(".options button").forEach(b => b.onclick = () => { $("q").value = b.dataset.rw; ask(); });
+  const eb = $("export-btn");
+  if (eb) eb.onclick = requestExport;
+  $("result-section").classList.remove("hidden");
+}
+
+async function ask() {
+  const q = $("q").value.trim();
+  if (!q) return;
+  $("ask-btn").disabled = true;
+  $("compare-section").classList.add("hidden");
+  try { renderResult(await api("/api/ask", {method: "POST", body: JSON.stringify({question: q})})); refreshSide(); }
+  catch (e) { $("result").innerHTML = `<div class="err">${esc(e.message)}</div>`; $("result-section").classList.remove("hidden"); }
+  finally { $("ask-btn").disabled = false; }
+}
+
+async function compare() {
+  const q = $("q").value.trim();
+  if (!q) return;
+  $("compare-btn").disabled = true;
+  try {
+    const results = await api("/api/compare", {method: "POST", body: JSON.stringify({question: q})});
+    $("compare").innerHTML = results.map(r => `
+      <div class="card">
+        <h3>${esc(r.user.display_name)}</h3>
+        <div class="who-line">${esc(r.user.role.replace("_", " "))}${r.user.region ? " · " + esc(r.user.region) : ""} · PII ${esc(r.user.pii_tier)}</div>
+        <span class="pill ${r.kind}">${r.kind}${r.reason_code ? " · " + esc(r.reason_code) : ""}</span>
+        <p>${esc(r.message)}</p>
+        ${r.scope_note ? `<div class="note">${esc(r.scope_note)}</div>` : ""}
+        ${r.rows.length ? table(r.columns, r.rows, 5) : ""}
+      </div>`).join("");
+    $("compare-section").classList.remove("hidden");
+    $("result-section").classList.add("hidden");
+    refreshSide();
+  } catch (e) { alert(e.message); }
+  finally { $("compare-btn").disabled = false; }
+}
+
+async function requestExport() {
+  const reason = prompt("Why do you need the full export? (the approver sees this)", "Quarterly reconciliation");
+  if (!reason) return;
+  try {
+    const req = await api("/api/exports", {method: "POST", body: JSON.stringify({question: lastResult.question, reason})});
+    alert(`Export ${req.request_id} requested. An approver (not you) must sign off before you can download it.`);
+    refreshSide();
+  } catch (e) { alert(e.message); }
+}
+
+async function decide(kind, id, approve) {
+  const reason = prompt(approve ? "Approval reason" : "Rejection reason", approve ? "Checked scope and purpose" : "Not justified");
+  if (!reason) return;
+  const path = kind === "export" ? `/api/exports/${id}/decision` : `/api/glossary/proposals/${id}/decision`;
+  try { await api(path, {method: "POST", body: JSON.stringify({approve, reason})}); refreshSide(); }
+  catch (e) { alert(e.message); }
+}
+async function download(id) {
+  try {
+    const res = await fetch(`/api/exports/${id}/csv`, {headers: headers()});
+    if (!res.ok) throw new Error((await res.json()).detail);
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = `${id}.csv`; a.click();
+  } catch (e) { alert(e.message); }
+}
+
+async function refreshSide() {
+  try {
+    const [exports, props] = await Promise.all([api("/api/exports"), api("/api/glossary/proposals")]);
+    const items = exports.map(x => `
+      <div class="side-item"><div class="q">${esc(x.request_id)} · ${esc(x.question)}</div>
+        <div class="sub">by ${esc(x.requested_by)} · ${esc(x.status)}${x.decided_by ? " by " + esc(x.decided_by) + " — " + esc(x.decision_reason) : ""}</div>
+        <div class="sub">reason: ${esc(x.reason)}</div>
+        <div class="acts">
+          ${x.status === "pending" && me.can_approve && x.requested_by !== me.user_id ? `<button class="small" onclick="decide('export','${esc(x.request_id)}',true)">Approve</button><button class="small secondary" onclick="decide('export','${esc(x.request_id)}',false)">Reject</button>` : ""}
+          ${x.status === "approved" && x.requested_by === me.user_id ? `<button class="small" onclick="download('${esc(x.request_id)}')">Download CSV</button>` : ""}
+        </div></div>`).join("");
+    const pitems = props.filter(p => p.status === "pending").map(p => `
+      <div class="side-item"><div class="q">Glossary: ${esc(p.term)}</div><div class="sub">${esc(p.definition)}</div>
+        <div class="sub">proposed by ${esc(p.proposed_by)}</div>
+        <div class="acts">${me.can_approve && p.proposed_by !== me.user_id ? `<button class="small" onclick="decide('glossary','${esc(p.proposal_id)}',true)">Approve</button><button class="small secondary" onclick="decide('glossary','${esc(p.proposal_id)}',false)">Reject</button>` : ""}</div></div>`).join("");
+    $("tab-approvals").innerHTML = (items || pitems) ? items + pitems :
+      `<p class="empty">No export requests yet. Ask “List all orders in 2025” — the result exceeds the 1,000-row cap, and the full set needs an export someone else approves. Sam and Lena are approvers.</p>`;
+  } catch (e) { $("tab-approvals").innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+  try {
+    const rows = await api("/api/audit?limit=30");
+    $("tab-audit").innerHTML = `<p class="empty" style="margin-top:0">${me.role === "privacy_officer" ? "Everyone's questions (privacy officer view)." : "Your questions. The privacy officer sees everyone's."} SQL and row counts are kept; result values are not.</p>` +
+      rows.map(a => `<div class="side-item"><div class="q">#${a.audit_id} · ${esc(a.user_id)} · <span class="pill ${esc(a.kind)}">${esc(a.kind)}</span></div>
+        <div>${esc(a.question)}</div><div class="sub">${esc(a.reason_code || "")} ${a.row_count !== null ? "· " + a.row_count + " rows" : ""} · scan ${esc(a.output_scan)} · ${esc(a.at)}</div></div>`).join("");
+  } catch (e) { $("tab-audit").innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+  try {
+    const cat = await api("/api/catalog");
+    $("tab-catalog").innerHTML = `<p class="empty" style="margin-top:0">The views the model is told about for ${esc(me.display_name)}. Nothing else exists for it.</p>` +
+      Object.entries(cat).map(([v, meta]) => `<div class="view-name">${esc(v)}</div>` + Object.entries(meta.columns).map(([c, m]) =>
+        `<div class="col">${esc(c)} <span>${esc(m.type)}</span>${m.pii ? ` <span class="pii">PII · you see ${esc(m.you_see)}</span>` : ""}</div>`).join("")).join("");
+  } catch (e) { $("tab-catalog").innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+
+document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === b));
+  ["approvals", "audit", "catalog"].forEach(t => $("tab-" + t).classList.toggle("hidden", t !== b.dataset.tab));
+});
+$("user").onchange = onUser;
+$("data").onchange = () => { dataSel = $("data").value; onUser(true); };
+$("ask-btn").onclick = ask;
+$("compare-btn").onclick = compare;
+$("q").addEventListener("keydown", e => { if (e.key === "Enter") ask(); });
+loadUsers().catch(e => { document.querySelector("main").insertAdjacentHTML("afterbegin", `<div class="err">Could not reach the API: ${esc(e.message)}</div>`); });
+</script>
+</body>
+</html>
